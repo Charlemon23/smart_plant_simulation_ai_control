@@ -1,4 +1,4 @@
-from fastapi import FastAPI, WebSocket, Depends
+from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
 from app.core.config import settings
@@ -12,17 +12,19 @@ app = FastAPI(
     default_response_class=ORJSONResponse
 )
 
+# === CORS setup (Codespaces & local safe) ===
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()],
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# === REST API routes ===
 app.include_router(api_router, prefix="/api/v1")
 
-# In-memory subscription set for demo purposes. Replace with Redis pub/sub in scale-out.
+# === WebSocket telemetry endpoint ===
 subscribers = set()
 
 @app.websocket("/ws/telemetry")
@@ -30,12 +32,12 @@ async def ws_telemetry(ws: WebSocket):
     await ws.accept()
     subscribers.add(ws)
     try:
-        # Broadcast simulator stream to this client
-        # Each connection gets its own task to forward shared telemetry events.
         queue = asyncio.Queue()
+
         async def enqueue_events():
             async for evt in simulator_loop():
                 await queue.put(evt)
+
         forwarder = asyncio.create_task(enqueue_events())
         try:
             while True:
@@ -48,3 +50,9 @@ async def ws_telemetry(ws: WebSocket):
     finally:
         subscribers.discard(ws)
         await ws.close()
+
+
+# === Health Check (for CI / Dev) ===
+@app.get("/health")
+def health():
+    return {"status": "ok", "backend_url": settings.BACKEND_URL}
