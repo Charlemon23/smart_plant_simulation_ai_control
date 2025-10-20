@@ -40,5 +40,5 @@ kubectl apply -f k8s/
 - `backend/app/services/anomaly.py`: basic anomaly detection stubs for cyber-resilience.
 
 ## Notes
-This is a scaffold. Replace stubs with your Tennessee Eastman implementation or FMU via PyFMI if desired.
+This is a scaffold. I will replace stubs with Tennessee Eastman implementation or FMU via PyFMI.
 Keep the interface contracts stable to avoid frontend or API changes.
