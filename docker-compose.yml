@@ -1,0 +1,46 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  backend:
+    build: ./backend
+    env_file: .env
+    depends_on:
+      - db
+      - redis
+    ports:
+      - "8000:8000"
+    command: ["bash","-lc","uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers"]
+
+  frontend:
+    build: ./frontend
+    env_file: .env
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+  nginx:
+    build: ./nginx
+    depends_on:
+      - frontend
+      - backend
+    ports:
+      - "80:80"
+
+volumes:
+  db_data:

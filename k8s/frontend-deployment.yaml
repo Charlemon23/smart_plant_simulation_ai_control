@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smart-plant-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: smart-plant-frontend
+  template:
+    metadata:
+      labels:
+        app: smart-plant-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: ghcr.io/yourorg/smart-plant-frontend:0.1.0
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smart-plant-frontend
+spec:
+  selector:
+    app: smart-plant-frontend
+  ports:
+  - port: 80
+    targetPort: 80
