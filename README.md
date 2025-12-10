@@ -1,44 +1,71 @@
-# Smart Plant Simulation & AI Control — Production Starter
+Digital Twin Demonstration Prototype
+AI-Controlled Smart Chemical Plant – Simulation & Control Loop Prototype
 
-A production-grade starter for a virtual chemical plant with AI-driven control,
-built with **FastAPI (Python)** + **React (TypeScript)**, ready for **Docker Compose** and **Kubernetes**.
+This module provides a fully functional digital twin prototype integrated into the broader Smart Plant Simulation AI Control system. It is designed for demonstrations, academic presentations, and early-stage research validation before connecting to real simulators such as DWSIM, Factory I/O, or Aspen HYSYS.
 
-## Stack
-- Backend: FastAPI, uvicorn, SQLAlchemy, Pydantic, WebSocket, Celery (optional)
-- Frontend: React (Vite, TS), Recharts, Zustand
-- Data: PostgreSQL (TimescaleDB compatible), Redis (pub/sub, cache)
-- Messaging: WebSocket (live telemetry). Optional Kafka hooks included.
-- Reverse proxy: NGINX
-- Containerization: Docker, docker-compose; Kubernetes manifests under `k8s/`.
+1. Overview
 
-## Local Development (Docker Compose)
-```bash
-cp .env.example .env
-docker compose up --build
-# Frontend: http://localhost:8080
-# Backend:  http://localhost:8000/docs
-```
+The digital twin prototype models a simplified chemical process (CSTR reactor + cooling control loop) and includes:
 
-## Kubernetes (kind or your cluster)
-```bash
-# Update image names/tags in k8s/*.yaml as needed
-kubectl apply -f k8s/
-```
+Virtual plant physics model
 
-## Services
-- `backend/`: FastAPI app exposing REST & WebSocket for telemetry/control.
-- `frontend/`: React dashboard with live plots and controls.
-- `nginx/`: Reverse proxy serving frontend and routing API/WebSocket.
-- `db/`: Postgres with TimescaleDB-compatible settings (vanilla Postgres image used as default).
-- `redis/`: Cache and pub/sub for live telemetry.
-- `scripts/`: helper scripts.
-- `k8s/`: Kubernetes manifests (Deployment, Service, Ingress).
+Sensor bus (noisy measurements)
 
-## Simulator & Controller
-- `backend/app/services/simulator.py`: deterministic, configurable chemical process simulator stub (reactor + distillation loop).
-- `backend/app/services/controller.py`: AI control hooks with an abstract interface for forecasting and RL control (plug in your models).
-- `backend/app/services/anomaly.py`: basic anomaly detection stubs for cyber-resilience.
+AI control agent placeholder (rule-based for demo)
 
-## Notes
-This is a scaffold. I will replace stubs with Tennessee Eastman implementation or FMU via PyFMI.
-Keep the interface contracts stable to avoid frontend or API changes.
+Realtime control loop
+
+System visualization
+
+This mirrors the architecture intended for the full AI-driven autonomous plant.
+
+2. System Architecture
+ ┌────────────────┐      ┌──────────────────┐      ┌────────────────────┐
+ │ Digital Twin    │ ---> │ Sensor Interface │ ---> │ AI Control Agent    │
+ │ (Plant Model)   │      │ (Noisy Readings) │      │ (RL / Rule-Based)   │
+ └────────────────┘      └──────────────────┘      └────────────────────┘
+          ▲                                                        │
+          └────────────────────────────────────────────────────────┘
+
+3. Features
+
+Continuous simulation of temperature and concentration dynamics
+
+Modular components designed to be replaced with real industrial systems
+
+Clean control loop allowing reinforcement learning integration
+
+Visualization for demonstrations
+
+4. Project Structure
+digital_twin_demo/
+│
+├── plant_simulator.py     # Digital plant model (CSTR)
+├── sensor_bus.py          # Noisy sensor readings
+├── control_agent.py       # Placeholder control agent
+├── visualizer.py          # Plots system behavior
+├── main.py                # Simulation orchestrator
+└── requirements.txt       # Python dependencies
+
+5. Installation
+pip install -r requirements.txt
+
+6. Running the Simulation
+python main.py
+
+
+This launches the real-time digital twin demonstration with visualization.
+
+7. Next Steps (Future Integration)
+
+This prototype is designed for seamless expansion to:
+
+Reinforcement learning (PPO, SAC, DQN)
+
+Real-time OPC-UA / MODBUS sensor integration
+
+DWSIM flowsheets for chemical accuracy
+
+Factory I/O or PLC-based control testing
+
+HPC training on LONI (qb3/qb4)
