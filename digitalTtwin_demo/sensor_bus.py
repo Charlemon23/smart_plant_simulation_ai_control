@@ -7,6 +7,9 @@ class SensorBus:
     def read(self, real_values):
         noisy = {}
         for k, v in real_values.items():
-            noisy[k] = v + np.random.normal(0, self.noise * v)
-        return noisy
+            # Ensure noise scale is ALWAYS positive and nonzero
+            scale = max(1e-6, abs(self.noise * v))
+            noise = np.random.normal(0, scale)
 
+            noisy[k] = v + noise
+        return noisy
