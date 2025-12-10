@@ -3,20 +3,22 @@ import pandas as pd
 import streamlit as st
 
 LOG_PATH = "run_log.csv"
+REFRESH_INTERVAL = 1  # seconds
 
-st.set_page_config(page_title="Digital Twin Dashboard", layout="wide")
+st.set_page_config(page_title="Digital Twin Demo", layout="wide")
 
-st.title("AI-Controlled Smart Chemical Plant – Digital Twin Dashboard")
-st.markdown("### Live monitoring of reactor temperature, concentration, and control actions.")
+st.title("AI-Controlled Smart Chemical Plant – Digital Twin Demonstration")
 
-chart_placeholder = st.empty()
-latest_placeholder = st.empty()
-status_placeholder = st.empty()
+# ---------------------------
+# Tabs for full DCS experience
+# ---------------------------
+tab_overview, tab_trends, tab_actions, tab_kpis = st.tabs(
+    ["Overview", "Trends", "Controller Actions", "KPIs"]
+)
 
 def load_data():
     try:
-        df = pd.read_csv(LOG_PATH)
-        return df
+        return pd.read_csv(LOG_PATH)
     except:
         return pd.DataFrame(columns=["step", "T", "C", "coolant_flow", "feed_rate"])
 
@@ -24,17 +26,52 @@ while True:
     df = load_data()
 
     if df.empty:
-        status_placeholder.warning("Waiting for simulation data...")
-    else:
-        last_step = int(df["step"].max())
-        status_placeholder.success(f"Simulation running. Last logged step: {last_step}")
+        st.warning("Waiting for simulation data...")
+        time.sleep(REFRESH_INTERVAL)
+        continue
 
-        # Line chart for T and C
-        chart_placeholder.line_chart(
-            df.set_index("step")[["T", "C"]]
-        )
+    latest = df.tail(1)
 
-        # Latest control action + state
-        latest_placeholder.write(df.tail(1))
+    # ----------------------------------------------------
+    # TAB 1 — OVERVIEW
+    # ----------------------------------------------------
+    with tab_overview:
+        st.subheader("Latest Plant State")
+        st.metric("Temperature (K)", f"{latest['T'].values[0]:.2f}")
+        st.metric("Concentration (mol/L)", f"{latest['C'].values[0]:.3f}")
 
-    time.sleep(1)
+        col1, col2 = st.columns(2)
+        col1.metric("Coolant Flow", f"{latest['coolant_flow'].values[0]:.2f}")
+        col2.metric("Feed Rate", f"{latest['feed_rate'].values[0]:.2f}")
+
+    # ----------------------------------------------------
+    # TAB 2 — TRENDS
+    # ----------------------------------------------------
+    with tab_trends:
+        st.subheader("Real-Time Process Trends")
+
+        chart_data = df.set_index("step")[["T", "C"]]
+        st.line_chart(chart_data)
+
+    # ----------------------------------------------------
+    # TAB 3 — CONTROL ACTIONS
+    # ----------------------------------------------------
+    with tab_actions:
+        st.subheader("Controller Output Signals (AI Decisions)")
+        st.line_chart(df.set_index("step")[["coolant_flow", "feed_rate"]])
+
+    # ----------------------------------------------------
+    # TAB 4 — KPIs
+    # ----------------------------------------------------
+    with tab_kpis:
+        st.subheader("Key Performance Indicators")
+
+        # Stability index: variance over last 100 steps
+        stability = df[["T", "C"]].tail(100).var().mean()
+
+        st.metric("Reactor Stability Index", f"{stability:.5f}")
+
+        st.write("Last 20 Samples")
+        st.dataframe(df.tail(20))
+
+    time.sleep(REFRESH_INTERVAL)

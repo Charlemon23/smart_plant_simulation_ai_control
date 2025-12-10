@@ -2,43 +2,42 @@ import numpy as np
 
 class PlantSimulator:
     """
-    Simplified digital twin of a continuous stirred tank reactor (CSTR)
-    + cooling jacket.
-
-    State variables:
-        T = reactor temperature
-        C = reactant concentration
-    Actions:
-        coolant_flow (0–1)
-        feed_rate (0–1)
+    A realistic, stable, non-explosive CSTR simulation model.
+    Temperature and concentration remain bounded for all inputs.
     """
 
     def __init__(self):
-        self.T = 350        # K
-        self.C = 1.0        # mol/L
+        self.T = 360.0      # Temperature (K)
+        self.C = 1.0        # Concentration (mol/L)
         self.dt = 0.1
+
+        # Reaction parameters
+        self.k0 = 5e2
+        self.Ea = 8000
+        self.R = 8.314
+
+        # Cooling & feed coefficients (stronger damping)
+        self.cool_coeff = 1500
+        self.feed_coeff = 0.3
 
     def step(self, action):
         coolant = np.clip(action.get("coolant_flow", 0.5), 0, 1)
         feed = np.clip(action.get("feed_rate", 0.5), 0, 1)
 
-        # Nonlinear dynamics (simplified)
-        k0 = 1.2e3
-        Ea = 8000
-        R = 8.314
+        # Reaction rate (bounded)
+        rate = self.k0 * np.exp(-self.Ea / (self.R * self.T)) * self.C
+        rate = max(0, min(rate, 3.0))  # Hard cap for safety
 
-        reaction_rate = k0 * np.exp(-Ea / (R * self.T)) * self.C
+        # Concentration update
+        dC = feed * self.feed_coeff - rate * 0.05
+        self.C = max(0.0, min(self.C + dC * self.dt, 2.0))
 
-        dC = feed * 0.5 - reaction_rate * 0.01
-        dT = (reaction_rate * 2000) - (coolant * 500)
-
-        # Update state
-        self.C += dC * self.dt
-        self.T += dT * self.dt
+        # Temperature update
+        dT = (rate * 1200) - (coolant * self.cool_coeff)
+        self.T = max(300.0, min(self.T + dT * self.dt, 500.0))
 
         return {
-            "T": self.T,
-            "C": self.C,
-            "reaction_rate": reaction_rate
+            "T": float(self.T),
+            "C": float(self.C),
+            "reaction_rate": float(rate)
         }
-
